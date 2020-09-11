@@ -734,7 +734,7 @@ components: {
     }, 
 //样式
 <style scope>
-  .home {
+  #home {
     padding-top: 44px;
   }
 
@@ -1177,3 +1177,616 @@ data() {
       },
 ```
 
+## 12.Better-Scroll的安装和使用
+
+### 安装指定版本
+
+`npm install better-scroll@1.13.2 --save`  
+
+安装完毕在package.json文件中看到如下：
+
+![image-20200911115938524](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200911115938524.png)
+
+注意：直接`npm install better-scoll`是安装的最新版本，也就是2.0版本
+
+[这是一篇关于npm技巧的文章  ] http://www.fly63.com/article/detial/4015
+
+**建议将better-scroll封装成一个组件，这样在其他地方也能使用，减少耦合度**
+
+**注意：**
+
+- ref如果是绑定在组件中的，那么通过**this.$refs.refname**获取到的是一个组件对象
+- ref如果是绑定在普通的元素中的，那么通过**this.$refs.refname**获取到的是一个元素对象
+
+vh ---> 视口单位
+
+### Better-Scroll的封装
+
+在components/common文件下新建文件夹scroll，再新建Scroll组件
+
+组件代码如下
+
+```js
+<template>
+  <div class="wrapper" ref="wrapper">
+    <div class="content">
+      <slot></slot>
+    </div>
+  </div>
+</template>
+
+<script>
+  import BScroll from 'better-scroll'
+
+  export default {
+    name: "Scroll",
+    data() {
+      return {
+        scroll: null
+      }
+    },
+    mounted() {
+      this.scroll = new BScroll(this.$refs.wrapper, {})
+    },
+  }
+</script>
+
+<style scoped>
+
+</style>
+```
+
+在Home.vue    Home.vue新增代码如下
+
+```js
+
+<scroll class="content">
+
+      <home-swiper :banners="banners"></home-swiper>
+      <recomment-view :recommends="recommends"></recomment-view>
+      <feature-view></feature-view>
+      <tab-control @tabClick="tabClick" class="tab-control" :titles="['流行','新款','精选']"></tab-control>
+      <goods-list :goods="showGoods" />
+
+</scroll>
+import Scroll from 'components/common/scroll/Scroll.vue'
+export default {
+    name: 'Home',
+    components: {
+      Scroll
+    },
+    
+<style scoped>
+  #home {
+    height: 100vh;
+    /* padding-top: 44px; */
+    position: relative;
+  }
+  .content {
+    overflow: hidden;
+    position: absolute;
+    top: 44px;
+    bottom: 49px;
+    left: 0;
+    right: 0;
+  }
+</style>
+```
+
+## 13.Back-Top组件的封装和使用
+
+当滚动 一定位置的时候，添加回到顶部按钮，多个地方应用，所以封装成一个组件
+
+components/content/backTop/BackTop
+
+修饰符.native 什么时候使用？
+
+- 在我们需要监听一个组件的原生事件时，必须给对应的事件加上.native修饰符，才能进行监听
+
+### 13.1 Back-Top组件的封装
+
+封装路径：components/content/backTop/BackTop.vue
+
+代码如下
+
+```js
+<template>
+  <div class="back-top">
+    <img src="~assets//img/common/top.png" alt="">
+  </div>
+</template>
+<script>
+  export default {
+    name: "BackTop",
+
+  }
+</script>
+<style scoped>
+  .back-top {
+    position: fixed;
+    right: 8px;
+    bottom: 55px;
+  }
+
+  .back-top img {
+    width: 43px;
+    height: 43px;
+  }
+</style>
+```
+
+在Home.vue中使用
+
+```js
+//使用 ,注意不要放入scroll中，因为这个不是滚动的元素
+<back-top @click.native="backClick" />
+//导入
+import BackTop from 'components/content/backTop/BackTop'
+//注册
+components: {
+      BackTop
+},
+```
+
+### 13.2 回到顶部
+
+在Back-Top组件内监听事件，然后在Home.vue中实现滚动很麻烦，所以在Home.vue中监听组件的点击事件，使用.native修饰符就可以监听组件的点击了
+
+```js
+// 给这个组件绑定一个backClick点击事件
+<back-top @click.native="backClick" />
+    //methods实现这个方法
+methods: {
+    backClick() {  
+		// scrollTo()方法是BS里的方法
+        
+        // this.refs.scroll.scroll.srcollTo(0,0,300)  
+        
+        //由于上面代码太冗长，不易阅读，所以我们在scroll.vue组件中进一步封装了scrollTo()方法，封装代码见下，封装完了就可以调用我们自己写的 this.$refs.scroll.scrollTo()方法了
+        this.$refs.scroll.scrollTo(0, 0)
+      },
+}
+```
+
+Scroll.vue  组件 
+
+```js
+// 封装了 scrollTo方法
+ <script>
+    methods: {
+      scrollTo(x, y, time = 300) {
+        this.scroll.scrollTo(x, y, time)
+      }
+    },
+  }
+</script>
+
+
+```
+
+## 14.Back-Top的显示和隐藏
+
+实时监听滚动的位置
+
+思路：
+
+- 在scroll组件中，监听滚动的位置，（ probeType属性要设置为3，但是为了和其他组件不起冲突，我们就动态的传入这个值，所以Home.vue中就有我们动态绑定的probeType，）position.y就是滚动的值，(通过 this.$emit('scroll', position)发出这个事件，)这个事件在Home.vue中接收
+
+- contentScroll(){}这个函数是接受组件scroll发出的事件，并在里面做相应的事情，参数positon就是滚动的位置
+
+- 从Home.vue中拿到滚动的值，做判断，控制back-top的显示和隐藏（v-show）
+
+在Scroll.vue中增加代码：
+
+```js
+<template>
+  <div class="wrapper" ref="wrapper">
+    <div class="content">
+      <slot></slot>
+    </div>
+  </div>
+</template>
+props: {
+	//bs使用的时候监听滚动要给probeType一个值，值有：0,1,2,3,
+      probeType: {
+        type: Number,
+        default: 0
+      }
+    }, 
+
+mounted() {
+      // 1.创建BScroll对象
+      this.scroll = new BScroll(this.$refs.wrapper, {
+        click: true,
+        probeType: this.probeType  //这里要动态传一个值，这里的值从Home.vue中传过来的，不给这个值，下面是无法监听这个滚动的位置
+
+      })
+      //2. 监听滚动的位置
+      this.scroll.on('scroll', (position) => {
+        // console.log(position);
+          // 这里监听是位置，只能在Scroll组件中使用 ，我们想在Home.vue中使用，所以将事件发出去。所以绑定个ref，见上面的 div
+        this.$emit('scroll', position)
+      })
+    },
+```
+
+Home.vue下新增代码
+
+```js
+//这里首页动态的传入 :probe-type="3" 然后接收scroll组件的scroll事件，
+<scroll class="content" ref="scroll" :probe-type="3" @scroll="contentScroll">
+//v-show接受一个布尔值来控制显示和隐藏，这个布尔值的结果就是 (-position.y) > 800返回的布尔值
+<back-top @click.native="backClick" v-show="isShowBackTop" />
+
+    //这里搞个变量用于存储，
+ data() {
+      return {
+        isShowBackTop: false
+      }
+    },
+// 这里contentScroll是接收scroll组件的事件，我们将其命名为：contentScroll
+    
+contentScroll(position) {
+        // console.log(position); 
+        // position.y < 1000
+        this.isShowBackTop = (-position.y) > 800 // 这里返回布尔值，这个布尔值就控制了back-top的显示和隐藏
+      },
+```
+
+
+
+## 15.上拉加载更多
+
+Better-Scroll有个pullingUp事件，用于上拉加载更多，所以，我们监听此事件即可
+
+**pullUpLoad**
+
+- 类型：Boolean | Object
+- 默认值：false
+- 作用：这个配置用于做上拉加载功能，默认为 false。当设置为 true 或者是一个 Object 的时候，可以开启上拉加载
+
+**pullingUp**
+
+- 参数：无
+- 触发时机：在一次上拉加载的动作后，这个时机一般用来去后端请求数据。
+
+**finishPullUp**
+
+- 参数：无
+- 返回值：无
+- 作用：当上拉加载数据加载完毕后，需要调用此方法告诉 better-scroll 数据已加载。
+
+**这里有个bug**，监听"pullingUp"事件，当我们觉得下拉完成时，并没有回调里面的函数，原因是scroll并不知道你这次的数据加载完成了。所以，我们数据完成成先调用一下**finishPullUp**这个函数，scroll才知道，数据已经加载
+
+整体思路：
+
+- 先在Home.vue中发送网络请求的代码中新增
+
+  ```js
+  finishPullUp() {
+          this.scroll.finishPullUp()
+      // 没封装的代码
+       this.scroll.scroll.finishPullUp()
+        }
+  // 这个方法是scroll 的， 所以我们要通过this.$refs.scroll.finishPullUp() 拿到scroll里的方法  ，前提是 scroll 里已经封装了这个方法
+  // scroll组件中 封装如下：
+  finishPullUp() {
+          this.scroll.finishPullUp()
+   }
+  
+  
+  ```
+
+- 上面代码就是告诉scroll，数据请求过来了，并且已经加载完成，然后我们就可以做上拉加载了
+
+  ```js
+  // 有了这个，我们就可以设置pullUpLoad的布尔值，来启用pullingUp 方法
+  //这个方法就是做上拉加载更多功能的，代码如下
+  this.scroll.on('pullingUp', () => {
+          // 监听这个方法，并将这个方法发出去，因为我们在Home组件中做上拉加载更多，不是scroll
+          this.$emit("pullingUp")
+  })
+  ```
+
+- 将上拉加载事件发送出去，并在Home.vue组件中接收
+
+  ```js
+  <scroll  
+  		:pull-up-load="true" // 动态的传入一个true 开启上拉加载.false关闭上拉加载功能
+       	 @pullingUp="loadMore" //将scroll组件发出的pullingUp事件绑定在loadMore>
+  
+  //loadMore()实现数据的请求
+  loadMore() {
+          this.getHomeGoods(this.currentType)
+  }
+  
+  ```
+
+  
+
+Scroll.vue代码如下
+
+```js
+
+<script>
+  import BScroll from 'better-scroll'
+  export default {
+    name: "Scroll",
+    props: {
+      probeType: {
+        type: Number,
+        default: 0
+      },
+         // 新增
+      pullUpLoad: {
+        type: Boolean,
+        default: false
+      }
+    },
+    data() {
+      return {
+        scroll: null
+      }
+    },
+    mounted() {
+      // 1.创建BScroll对象
+      this.scroll = new BScroll(this.$refs.wrapper, {
+        click: true,
+        probeType: this.probeType,
+        // 新增
+        pullUpload: this.pullUpLoad,
+
+      })
+      //2. 监听滚动的位置
+      
+      //3.监听上拉加载事件
+
+      this.scroll.on('pullingUp', () => {
+        // console.log("222");
+        this.$emit("pullingUp")
+      })
+    },
+    methods: {
+      scrollTo(x, y, time = 300) {
+        this.scroll.scrollTo(x, y, time)
+      },
+       // 新增 
+      finishPullUp() {
+        this.scroll.finishPullUp()
+      }
+    },
+  }
+</script>
+
+```
+
+Home.vue代码如下：
+
+```js
+<scroll class="content" ref="scroll" :probe-type="3" @scroll="contentScroll" :pull-up-load="true"// 动态的传入一个true 开启上拉加载
+      @pullingUp="loadMore" //将scroll组件发出的pullingUp事件绑定在loadMore>
+//新增
+methods{
+   loadMore() {
+        this.getHomeGoods(this.currentType)//根据当前的分类，请求相关的数据
+   }
+     /* 
+        网络请求相关的方法
+      */
+     getHomeGoods(type) {
+        // 获取goods里的页码
+        const page = this.goods[type].page + 1
+        getHomeGoods(type, page).then(res => {
+          // console.log(res);
+          this.goods[type].list.push(...res.data.list)
+          this.goods[type].page += 1
+           // 新增代码
+		//调用finishPullUp方法，告诉scroll数据已经加载完了，每次加载完都调用这个方法，然后在scroll.vue中通过 pullingUp 这个事件监听上拉加载更多
+          this.$refs.scroll.finishPullUp()
+        })
+      }, 
+}
+
+```
+
+## 16.知识回顾3
+
+### 一.FeatureView
+
+- 独立组件封装FeatureView
+  - div>a>img
+
+### 二. TabControl
+
+- 独立组件的封装
+  - props --> titiles 
+  - div -->根据titles v-for遍历 -->span{{title}}
+  - css相关
+  - 选中哪一个tab,哪一个tab的文字颜色变色，下面border-bottom
+    - currentIndex
+
+
+
+### 三.首页商品数据请求
+
+#### 3.1设计数据结构，用于保存数据
+
+goods{
+
+pop:page/list
+
+new:page/list
+
+sell:page/list
+
+}
+
+#### 3.2 发送数据请求
+
+- 在home.js中封装getHomeGoodes(type,page)
+
+- 在Home.vue，由在methods中getHomeGoodes（type）
+
+- 调用getHomeGoodes('pop')/getHomeGoodes('new')/getHomeGoodes('sell')
+
+  - page:动态的获取对应的page
+
+- 获取到数据：res
+
+  - this.goods[type].list.push(...res.data.lsit)
+  - this.goods[type] += 1 
+
+  
+
+  goods{
+
+  pop:page1/list[30]
+
+  new:page1/list[30]
+
+  sell:page1/list[30]
+
+  }
+
+### 四.对商品数据进行展示
+
+#### 4.1 封装GoodsList.vue组件
+
+- props:goods   -->list[30]
+
+#### 4.2 封装GoodsListItem.vue组件
+
+- props：goodsItem   
+- goodsItem  取出数据，并且使用正确的div/span/img基本标签进行展示
+
+### 五. 对滚动进行重构：Better-Scroll
+
+#### 5.1  在index.html中使用Better-Scroll
+
+- const bscroll = new BScroll(el,{})
+
+- 注意：wrapper -> content -> 很多内容
+- 1.监听滚动
+  - probeType ：0/1/2(手指滚动)/3(只要是滚动)
+  - bscroll.on('scroll',position =>{})
+- 2.上拉加载
+  - pullUpLoad：true
+  - bscroll.on('pullingUp',()=>{})
+- 3.click：false
+  - button 可以监听点击
+  - div不可以
+
+#### 5.2 在Vue项目中使用Better-Scroll
+
+- 在Profile.vue中简单的演示
+- 对Better-Scroll进行封装：Scroll.vue
+- Home.vue和Scroll.vue之间进行通信
+  - Home.vue将probeType设置为3
+  - Scroll.vue需要通过$emit，实时将事件发送到Hoem.vue
+
+
+
+### 六.回到顶部BackTop
+
+#### 6.1 对BackTop.vue组件的封装
+
+#### 6.2如何监听组件的点击
+
+- 直接监听back-top的点击，但是可以直接监听？
+  - 不可以，必须添加修饰符.native
+- 回到顶部
+  - scroll对象，scroll.scrollTo(*x*, *y*, *time*)
+  - this.scroll.scrollTo(0, 0, 500)
+
+#### 6.3.BackTop组件的显示和隐藏
+
+- isShowBackTop：false
+- 监听滚动，拿到滚动的位置
+  - -position.y >1000 ->isShowBackTop：true
+  - isShowBackTop = -position.y >1000 
+
+## 17.解决首页中Better-Scroll可滚动区域的问题
+
+- Better-Scroll在 决定有多少区域可以滚动时，是根据scrollerHeight属性决定
+  - scrollerHeight属性是根据放在Better-Scroll的content中的子组件的高度
+  - 但是我们的首页中，刚开始计算scrollerHeight属性时，是没有将图片计算在内的
+  - 所以，计算出来的告诉是错误的（1300+）
+  - 后来图片加载进来之后新的高度，但是scrollerHeight属性并没有进行更新
+  - 所以滚动出现了问题
+- 如何解决这个问题？
+  - 监听每一张图片是否加载完成，只要有一张图片加载完成了，执行一次refresh()
+  - 如何监听图片加载完成了？
+    - 原生的js监听图片img.onload= function(){}
+    - Vue中监听：@load=“方法”
+  - 调用scroll的refresh()
+- 如何将GoodsListItem.vue中的事件传入到Home.vue中
+  - 因为涉及到非父子组件的通信，所以我们选择了**事件总线**
+    - bus   -> 总线
+    - Vue.prototype.$bus = **new** Vue()
+    - this.$bus.$emit("事件名称")
+    - this.$bus.$on('事件名称'，回调函数(参数))
+
+GoodsListItem.vue 代码如下
+
+```js
+//监听每个图片都加载完毕  
+<img :src="goodsItem.show.img" alt="" @load="imageLoad">
+
+      methods: {
+      imageLoad() {
+        // 将图片加载完毕的事件发送出去
+        this.$bus.$emit('itemImageLoad')
+      }
+    },
+```
+
+main.js 代码
+
+```js
+// 给vue的原型绑定一个事件总线$bus
+Vue.prototype.$bus = new Vue()
+
+```
+
+Home.vue
+
+```js
+mounted() {
+      // 3.监听item中图片加载完成 通过事件总线监听到GoodsListItem.vue发出的事件
+      this.$bus.$on('itemImageLoad', () => {
+        // 调用scroll.refresh()函数，重新计算 better-scroll（图片的高度）
+        this.$refs.scroll.refresh()
+      })
+    },
+   // 最好放mounted进行调用，因为在created生命周期函数中，scroll 未初始化完成
+        
+```
+
+Scroll.vue
+
+```js
+//封装这个方法，这样在Home.vue中就不用this.scroll.scroll.refresh()
+
+refresh() {
+    //这里防止refresh找不到，所以前面加了判断
+        this.scroll && this.scroll.scrollTo && this.scroll.refresh()
+      }
+```
+
+**refresh()**
+
+- 参数：无
+- 返回值：无
+- 作用：重新计算 better-scroll，当 DOM 结构发生变化的时候务必要调用确保滚动的效果正常。
+
+## 20.refresh函数找不到bug处理
+
+见上面。将refresh函数调用放在mounted调用
+
+## 21.刷新频繁防抖处理
+
+- 对于refresh非常频繁的问题，进行防抖操作
+  - 防抖debounce、节流throttle
+  - 防抖函数起作用的过程
+    - 如果我们直接执行refresh,那么refresh函数会执行30次
+    - 可以将refresh函数传入到debounce中，生成一个新的函数
