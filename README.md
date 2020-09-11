@@ -1,19 +1,1179 @@
-# my-shop
+# my_shop
 
-## Project setup
+## 1.项目初始化和git托管
+
+### 创建项目
+
+不会的参照vue/cli官网`https://cli.vuejs.org/zh/guide/`
+
+脚手架创建项目`vue create my_shop`
+
+### github托管
+
+1. 创建一个仓库 ——New repository
+
+![image-20200907192308069](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200907192308069.png)
+
+![image-20200907192404538](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200907192404538.png)
+
 ```
-npm install
+在项目中打开执行下面三个命令
+链接本地仓库与远端仓库
+git remote add origin https://github.com/ArichieDavis/123.git
+创建并合并master分支
+git branch -M master
+将本地仓库推送到远程仓库（并初始化远程仓库）
+git push -u origin master
 ```
 
-### Compiles and hot-reloads for development
-```
-npm run serve
+## 2.划分目录结构
+
+─App.vue
+├─main.js  -------------------------------------------------------------------------------------入口文件
+├─views	  -------------------------------------------------------------------------------------主页视图页面
+|   ├─shopcart ----------------------------------------------------------------------------------购物车页面
+|   |    └Shopcart.vue ----------------------------------------------------------------------------------购物车组件页面
+|   ├─profile----------------------------------------------------------------------------------我的--页面
+|   |    └Profile.vue--------------------------------------------------------------------------------我的组件--页面
+|   ├─home----------------------------------------------------------------------------------首页页面
+|   |  ├─Home.vue----------------------------------------------------------------------------------首页页面组件
+|   |  ├─childComps-------------------------------------------------------------------------------首页页面子组件
+|   |  |     ├─FeatureView.vue-----------------------------------------------------------------------------本周流行组件
+|   |  |     ├─HomeSwiper.vue-------------------------------------------------------------------------首页轮播图组件
+|   |  |     └RecommendView.vue-------------------------------------------------------------------首页推荐组件
+|   ├─category-------------------------------------------------------------------------------------分类组件
+|   |    └Category.vue----------------------------------------------------------------------------------分类子组件
+├─store----------------------------------------------------------------------------------------vuex
+|   └index.js----------------------------------------------------------------------------------
+├─router----------------------------------------------------------------------------------router
+|   └index.js----------------------------------------------------------------------------------
+├─network----------------------------------------------------------------------------------网络请求
+|    ├─home.js----------------------------------------------------------------------------------首页网络请求
+|    └network.js----------------------------------------------------------------------------------
+├─components----------------------------------------------------------------------------------组件
+|     ├─content----------------------------------------------------------------------------------与业务相关的组件
+|     |    ├─tabControl----------------------------------------------------------------------------------底部切换栏
+|     |    |     └tabControl.vue-----------------------------------------------------------------------------流行-新款-精选
+|     |    ├─tabbar----------------------------------------------------------------------------------底部tabbar切换
+|     |    |   └MainTabBar.vue--------------------------------------------------------------------底部tabbar切换组件
+|     |    ├─goods----------------------------------------------------------------------------------商品页
+|     |    |   ├─GoodsList.vue----------------------------------------------------------------------------------
+|     |    |   ├─GoodsListItem.vue----------------------------------------------------------------------------
+|     |    |   ├─Good----------------------------------------------------------------------------------
+|     |    |   |  └Item.vue----------------------------------------------------------------------------------
+|     ├─common----------------------------------------------------------------------------与业务无关的可复用的组件
+|     |   ├─tabbar----------------------------------------------------------------------------------
+|     |   |   ├─TabBar.vue----------------------------------------------------------------------------------
+|     |   |   └TabBarItem.vue----------------------------------------------------------------------------------
+|     |   ├─swiper----------------------------------------------------------------------------------
+|     |   |   ├─index.js----------------------------------------------------------------------------------
+|     |   |   ├─Swiper.vue----------------------------------------------------------------------------------
+|     |   |   └SwiperItem.vue----------------------------------------------------------------------------------
+|     |   ├─navbar----------------------------------------------------------------------------------
+|     |   |   └NavBar.vue----------------------------------------------------------------------------------
+├─assets ----------------------------------------------------------------------------------
+|   ├─img----------------------------------------------------------------------------------
+|   |  ├─tabbar----------------------------------------------------------------------------------
+|   |  |   ├─category.svg
+|   |  |   ├─category_active.svg
+|   |  |   ├─home.svg1
+|   |  |   ├─home_active.svg
+|   |  |   ├─profile.svg
+|   |  |   ├─profile_active.svg
+|   |  |   ├─shopcart.svg
+|   |  |   └shopcart_active.svg
+|   |  ├─profile----------------------------------------------------------------------------------
+|   |  |    ├─avatar.svg
+|   |  |    ├─cart.svg
+|   |  |    ├─message.svg
+|   |  |    ├─phone.svg
+|   |  |    ├─pointer.svg
+|   |  |    ├─shopping.svg
+|   |  |    └vip.svg
+|   |  ├─home----------------------------------------------------------------------------------
+|   |  |  └recommend_bg.jpg
+|   |  ├─detail----------------------------------------------------------------------------------
+|   |  |   ├─cart.png
+|   |  |   └detail_bottom.png
+|   |  ├─common----------------------------------------------------------------------------------
+|   |  |   ├─arrow-left.svg
+|   |  |   ├─back.svg
+|   |  |   ├─collect.svg
+|   |  |   ├─placeholder.png
+|   |  |   └top.png
+|   |  ├─cart
+|   |  |  └tick.svg
+|   ├─css----------------------------------------------------------------------------------
+|   |  ├─base.css
+|   |  └normalize.css
+
+## 3.引入css样式
+
+文件目录：assets  ---> css ----> base.css
+
+在App.vue中引入css样式--->base.css,其中base.css中引入了normalize.css
+
+```js
+@import './assets/css/base.css';
 ```
 
-### Compiles and minifies for production
-```
-npm run build
+## 4.配置文件路径
+
+新建vue.config.js文件，配置路径别名
+
+```js
+module.exports = {
+  configureWebpack: {
+    resolve: {
+      alias: {
+        views: "@/views",
+        components: "@/components",
+        network: "@/network",
+        common: "@/common",
+        assets: "@/assets",
+      },
+    },
+  },
+};
 ```
 
-### Customize configuration
-See [Configuration Reference](https://cli.vuejs.org/config/).
+在App.vue中修改路径
+
+```js
+@import '@/assets/css/base.css';
+```
+
+.editorcongfig.js  团队开发遵循的代码规范（略）
+
+## 5.tabbar引入和模块划分
+
+### tabbar引入
+
+MainTabBar组件是基于Tabbar和TabBarItem封装的，
+
+文件目录结构：
+
+components  --->common ---> tabbar --->Tabbar.vue   &&&   TabBarItem.vue
+
+components  --->content --->tabbar --->MainTabBar
+
+这里的封装思想：通过预留的插槽，在MainTabBar中根据插槽的位置填充对应的内容
+
+App.vue中引入MainTabBar
+
+```js
+<template>
+  <div id="app">
+    <main-tab-bar></main-tab-bar>
+    <router-view></router-view>
+  </div>
+</template>
+
+<script>
+import MainTabBar from 'components/content/tabbar/MainTabBar.vue'
+</script>
+```
+
+### 模块划分
+
+src--->views---->home --->Home .vue   首页
+
+src--->views---->category--->Category.vue   分类
+
+src--->views---->detail--->Detail.vue   详情页
+
+src--->views---->profile--->Profile.vue   我的
+
+src--->views---->cart--->Cart.vue  购物车
+
+
+
+通过vue-router配置跳转
+
+路由安装`npm install vue-router `
+
+路由使用
+
+在src目录下创建 router--->index.js,代码如下
+
+```js
+import Vue from "vue";
+import VueRouter from "vue-router";
+// 路由懒加载
+const Home = () => import("views/home/Home.vue");
+const Category = () => import("views/category/Category.vue");
+const Detail = () => import("views/detail/Detail.vue");
+const Profile = () => import("views/profile/Profile.vue");
+const Cart = () => import("views/cart/Cart.vue");
+
+Vue.use(VueRouter);
+
+const routes = [
+  {
+    path: "/",
+    redirect: "/home",
+  },
+  {
+    path: "/home",
+    component: Home,
+  },
+  {
+    path: "/category",
+    component: Category,
+  },
+  {
+    path: "/cart",
+    component: Cart,
+  },
+  {
+    path: "/profile",
+    component: Profile,
+  },
+  {
+    path: "/detail",
+    component: Detail,
+  },
+];
+
+const router = new VueRouter({
+  mode: "history",
+  routes,
+});
+
+export default router;
+
+```
+
+App.vue代码如下
+
+```js
+<template>
+  <div id="app">
+    <main-tab-bar></main-tab-bar>
+    <router-view></router-view>   // 增加路由占位符
+  </div>
+</template>
+<script>
+  import MainTabBar from 'components/content/tabbar/MainTabBar.vue'
+  export default {
+    name: 'App',
+    components: {
+      MainTabBar
+    }
+  }
+</script>
+<style>
+  @import './assets/css/base.css';
+</style>
+```
+
+main.js文件
+
+```js
+import Vue from "vue";
+import App from "./App.vue";
+import router from "./router"; // 导入路由
+
+Vue.config.productionTip = false;
+
+new Vue({
+  router,// 注册路由
+  render: (h) => h(App),
+}).$mount("#app");
+
+```
+
+## 6.小图标
+
+public目录下有个favicon.ico 替换掉即可
+
+public/index.html   小图表显示位置
+
+```html
+<link rel="icon" href="<%= BASE_URL %>favicon.ico">
+```
+
+# 首页开发
+
+## 1.首页导航栏的封装和使用
+
+![image-20200908143511149](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200908143511149.png)
+
+文件目录`components/navbar`
+
+创建组件  NavBar.vue
+
+开发步骤：创建好NavBar.vue组件，然后Home.vue中引入并使用，然后在NavBar.vue中开发，最后在Home通过预留插槽显示对应的内容，这里先写好html结构和css样式，最终使用slot。
+
+布局：采用flex布局
+
+为了组件的可复用性，使用了插槽预留位置
+
+```js
+<template>
+  <div class="nav-bar">
+    <div class="left">
+      <slot name="left"></slot>
+    </div>
+    <div class="center">
+      <slot name="center"></slot>
+    </div>
+    <div class="right">
+      <slot name="right"></slot>
+    </div>
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "NavBar"
+  }
+</script>
+
+<style scoped>
+  .nav-bar {
+    display: flex;
+    height: 44px;
+    line-height: 44px;
+    text-align: center;
+  }
+
+  .left {
+    width: 60px;
+  }
+
+  .right {
+    width: 60px;
+  }
+
+  .center {
+    flex: 1;
+  }
+</style>
+```
+
+Home.vue引入---注册---使用
+
+```js
+<nav-bar class="home-nav">
+      <div slot="center">购物街</div>
+</nav-bar>
+
+import NavBar from 'components/common/navbar/NavBar'
+
+export default {
+ components: {
+  NavBar,
+  }
+},
+<style>
+.home-nav {
+    background-color: var(--color-tint);
+    color: #fff;
+    position: relative;
+    z-index: 9;
+  }
+</style>
+```
+
+## 2.请求首页的多个数据
+
+网络模块封装: src--->networt---> request.js
+
+封装的意义：避免以后第三方的模块不维护了，可以选择替代的模块，而且不要批量替换
+
+```js
+import axios from "axios";
+
+export function request(config) {
+  // 创建axios实例对象
+  const instance = axios.create({
+    baseURL: "http://152.136.185.210:8000/api/z8",
+    timeout: 5000,
+  });
+  // 2.axios拦截器
+  // 2.1请求拦截器
+  instance.interceptors.request.use(
+    (config) => {
+      return config;
+    },
+    (err) => {}
+  );
+  // 2.2响应拦截器
+  instance.interceptors.response.use(
+    (res) => {
+      return res.data;
+    },
+    (err) => {
+      console.log(err);
+    }
+  );
+  return instance(config);
+}
+
+```
+
+home页相关的请求进行再一次封装，以后主页所有的网络请求都在一个地方，方便管理：src--->networt---> home.js
+
+```js
+import { request } from "./request";
+export function getHomeMultiData() {
+  return request({
+    url: "/home/multidata",
+  });
+}
+
+```
+
+在Home组件中使用
+
+```js
+// 导入网络请求模块
+  import { getHomeMultiData } from 'network/home.js'
+  export default {
+    name: 'Home',
+    components: {
+      NavBar
+    },
+    data() {
+      return {
+        // 用于保存返回的banner网路数据
+        banners: [],
+          //用于保存 返回recommends的网路数据
+        recommends: []
+      }
+    },
+    created() {
+      // 1.请求多个数据，在页面创建完成后发送网络请求
+      //getHomeMultiData()返回的是promise ，直接then调用即可
+      getHomeMultiData().then(res => {
+        console.log(res);
+        // 保存请求的数据 函数执行完毕会消失，所以这里需要保存请求的数据
+        this.banners = res.data.banner.list
+        this.recommends = res.data.recommend.list
+      })
+    },
+  }
+```
+
+## 3.轮播图的展示
+
+![image-20200908143458189](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200908143458189.png)
+
+首先：轮播图是老师封装好的组件，然后直接拿过来即可
+
+路径：components  --->common--->swiper--->index.js  &&  Swiper.vue  &&  SwiperItem
+
+在Home.vue中使用如下：
+
+```js
+<template>
+<swiper>
+    
+      <swiper-item v-for="item in banners">
+        <a :href="item.link">
+          <img :src="item.image" alt="">
+        </a>
+      </swiper-item>
+    </swiper>
+
+
+ <script> 
+import { Swiper, SwiperItem } from 'components/common/swiper/index.js'
+```
+
+轮播图的数据之前是保存在banners数组中，所以我们从banners 中通过v-for遍历取出数据即可
+
+**注意**：要**动态绑定href**，也就是:href="item.link"  :src="item.image"  不然不会当成变量解析
+
+最后：
+
+把swiper再次封装成----HomeSwiper.vue  步骤如下
+
+文件路径：home--->childComps--->HomeSwiper.vue
+
+```js
+<template>
+  <div>
+    <swiper>
+      <swiper-item v-for="item in banners">
+        <a :href="item.link">
+          <img :src="item.image" alt="">
+        </a>
+      </swiper-item>
+    </swiper>
+  </div>
+</template>
+<script>
+  import { Swiper, SwiperItem } from 'components/common/swiper/index.js'
+  export default {
+    name: 'Home',
+    components: {
+      Swiper,
+      SwiperItem
+    },
+     //父子组件的传值，
+    props: {
+      banners: {
+        type: Array,
+        default() {
+          return []
+        }
+      }
+    }
+  }
+</script>
+```
+
+Home.vue 引用
+
+```js
+//父组件传个banners 过去，子组件props中banners接收，这里命名都相同，新手容易误导
+//使用:vue中推荐用短横线命名法替换驼峰命名法，防止出错
+<home-swiper  :banners="banners" ></home-swiper>
+//导入
+import HomeSwiper from './childComps/HomeSwiper'
+//注册
+ components: { 
+      HomeSwiper, 
+    },
+data() {
+      return {
+        banners: [],       
+      }
+    },
+
+```
+
+![image-20200908105937245](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200908105937245.png)
+
+## 4.推荐信息展示
+
+![image-20200908143439453](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200908143439453.png)
+
+封装一个组件 home---->childComps--->RecommentView    
+
+思路：数据在Home.vue的data中的commends中，所以在子组件中使用需通过props传值
+
+获取到数据在写样式（这里不推荐，最好先写好结构和样式在往里面填充内容）
+
+代码如下：
+
+```js
+<template>
+  <div class="recommend">
+    <div class="recommend-item" v-for="item in recommends">
+      <a :href="item.link">
+        <img :src="item.image" alt="">
+        <span>{{item.title}}</span>
+      </a>
+    </div>
+  </div>
+</template>
+<script>
+
+  export default {
+    name: 'RecommentView',
+    components: {
+
+    },
+    props: {
+      recommends: {
+        type: Array,
+        default() {
+          return []
+        }
+      }
+    }
+  }
+</script>
+<style scoped>
+  .recommend {
+    display: flex;
+    margin-top: 10px;
+    font-size: 14px;
+    padding-bottom: 30px;
+    border-bottom: 10px solid #eee;
+  }
+
+  .recommend-item {
+    flex: 1;
+    text-align: center;
+  }
+
+  .recommend img {
+    width: 80px;
+    height: 80px;
+    margin-bottom: 10px;
+  }
+</style>
+```
+
+Home中引入
+
+```js
+//模板中添加
+<recomment-view :recommends="recommends"></recomment-view>
+//导入
+import HomeSwiper from './childComps/HomeSwiper.vue'
+
+// 注册组件
+components:{
+    RecommentView
+  },
+```
+
+## 5.知识回顾2
+
+### 5.1Promise
+
+promise的基本使用
+
+- 如何将异步操作放入到promise中
+- （resolve，reject） => then/catch
+
+Promise的链式调用
+
+Promise的all方法
+
+### 5.2 Vuex
+
+1. 什么是状态管理
+
+2. Vuex的基本使用
+   -  state-->直接修改state（错误）
+   - mutations  ->devtools
+
+ 3.核心概念
+
+- state 单一状态数
+
+- getters
+
+- mutations
+- actions--->异步操作（promise）
+- modules
+
+4.目录组织方式
+
+### 5.3网络请求封装
+
+- 网络请求方式的选择
+- axios的基本使用
+- axios的相关配置
+- axios的创建实例
+- axios的封装
+
+#### 5.4项目开发
+
+新项目：
+
+1.划分目录结构
+
+2.引入两个css文件
+
+3.vue.config.js和.editorconfig
+
+4.项目的模块划分;tabber---路由映射关系
+
+5.首页开发
+
+- navbar 的封装
+- 网络数据的请求
+- 轮播图
+- 推荐信息
+
+## 6. FeatureView的封装
+
+![image-20200908143422443](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200908143422443.png)
+
+源程序就是一张图片，然后这里封装成一个组件
+
+路径如下：home--->childComps--->FeatureView.vue
+
+```js
+<template>
+  <div class="feature">
+    <a href="https://act.mogujie.com/zzlx67">
+      <img src="~assets/img/home/recommend_bg.jpg" alt="">
+    </a>
+  </div>
+</template>
+<script>
+  export default {
+    name: 'FeatureView'
+  }
+</script>
+<style>
+  .feature img {
+    width: 100%;
+  }
+</style>
+```
+
+Home.vue中引入
+
+```js
+// 使用
+<template>
+  <div id="home">
+    <nav-bar class="home-nav">
+      <div slot="center">购物街</div>
+    </nav-bar>
+    <home-swiper :banners="banners"></home-swiper>
+    <recomment-view :recommends="recommends"></recomment-view>
+    <feature-view></feature-view>
+  </div>
+</template>
+// 导入
+import FeatureView from './childComps/FeatureView.vue'
+// 注册
+components: {
+     
+      FeatureView
+    }, 
+//样式
+<style scope>
+  .home {
+    padding-top: 44px;
+  }
+
+  .home-nav {
+    background-color: var(--color-tint);
+    color: #fff;
+    position: fixed;
+    left: 0;
+    right: 0;
+    top: 0;
+    z-index: 9;
+  }
+</style>
+```
+
+## 7.TabControl
+
+![image-20200908143358235](C:\Users\David.du\AppData\Roaming\Typora\typora-user-images\image-20200908143358235.png)
+
+开发思路：
+
+文件路径：与业务有关的组件，放在：`components/content/tabcontrol/TabControl.vue`
+
+动态绑定class，给个active类，index===currentIndex 来当前的index和currentIndex一致是显示active类的样式，
+
+点击切换实现：绑定一个tabClick()事件，点击获取遍历的index，并将index赋值给currentIndex，然后程序判断`{active: index === currentIndex} `的布尔值来决定是否显示active类的样式
+
+**TabControl.vue代码如下**
+
+```js
+<template>
+  <div class="tab-control">
+    <!-- 只是文字不一样的情况，没必要搞插槽 -->
+    <div v-for="(item,index) in titles" class="tab-control-item" :class="{active: index === currentIndex}"
+      @click="tabClick(index)">
+      <span>{{item}}</span>
+    </div>
+
+  </div>
+</template>
+
+<script>
+  export default {
+    name: "TabControl",
+    props: {
+      titles: {
+        type: Array,
+        default() {
+          return []
+        }
+      }
+    },
+    data() {
+      return {
+        currentIndex: 0
+      }
+    },
+    methods: {
+        //这里要传入index值，然后index 的值赋值给currentIndex ，再在{active: index === currentIndex} 判断是否显示active类
+      tabClick(index) {
+        this.currentIndex = index
+      }
+    },
+  }
+</script>
+<style scoped>
+  .tab-control {
+    display: flex;
+    text-align: center;
+    height: 40px;
+    line-height: 40px;
+    background-color: #fff;
+  }
+
+  .tab-control-item {
+    flex: 1;
+
+  }
+
+  .tab-control-item span {
+    padding: 5px;
+  }
+
+  .active {
+    color: var(--color-high-text);
+
+  }
+
+  .active span {
+    border-bottom: 3px solid var(--color-tint);
+  }
+</style>
+```
+
+**Home.vue代码新增**
+
+```js
+//使用
+<tab-control class="tab-control" :titles="['流行','新款','精选']"></tab-control>
+
+import TabControl from 'components/content/tabcontrol/TabControl.vue'
+
+export default {
+    
+    components: {
+      
+      TabControl
+    },
+<style>
+    //实现简单的停留效果，
+.tab-control {
+    position: sticky;
+    top: 44px;
+
+  }
+```
+
+## 8.保存商品的数据结构设计
+
+#### 分析：如何设计商品的数据结构
+
+第一步：请求商品列表数据
+
+点击流行 新款精选的时候数据不跟着切换：原因是vue数据的一个复用问题，绑定key 即可解决
+
+根据不同的点击，展示不同的数据
+
+保存数据的时候，把所有的数据都保存下来
+
+用一个变量中存储着：流行、新款、精选
+
+流行的数据：
+
+goods：(流行/新款/精选/)
+
+```js
+goods:{
+    'pop':{page:1,list:[150]},// page用于记录当前加载到第几页，list用于记录当前已经加载了多少条数据
+    'new':{page:2,list:[60]},
+    'sell':{page:1,list:[30]}
+}
+
+
+```
+
+Home.vue新增如下代码
+
+```js
+ data() {
+      return {
+        banners: [],
+        recommends: [],
+         // 新增以下
+        goods: {
+          'pop': { page: 0, list: [] },
+          'news': { page: 0, list: [] },
+          'sell': { page: 0, list: [] }
+        }
+      }
+    },
+```
+
+在created（）｛｝写一些主要逻辑
+
+在methods写一些方法
+
+怎么把一个数组放进另一个数组
+
+方法一遍历
+
+```js
+for（let n of num）{
+	total.push(n)
+}
+ES6   ...扩展运算符
+
+total.push(...num)
+```
+
+## 9.首页数据的请求和保存
+
+```js
+created() {
+      // 1.请求多个数据，在页面创建完成后发送网络请求
+      getHomeMultiData().then(res => {
+          console.log(res);
+          // 保存请求的数据 函数执行完毕会消失，所以这里需要保存请求的数据
+          this.banners = res.data.banner.list
+          this.recommends = res.data.recommend.list
+        })
+
+      // 2. 请求商品数据
+       getHomeGoods(type, page).then(res => {
+          console.log(res);
+          this.goods[type].list.push(...res.data.list)
+          this.goods[type].page += 1
+        })
+    },
+```
+
+原先将数据请求都放在created里，考虑到这里代码越来越多，逻辑复杂，将其再次封装在methods里
+
+```js
+ created() {
+      // 1.请求多个数据，在页面创建完成后发送网络请求  
+     // 注意：当created里的函数和methods 函数名字一致时，使用this调用
+      this.getHomeMultiData()
+
+      // 2. 请求商品数据
+      this.getHomeGoods('pop')
+      this.getHomeGoods('new')
+      this.getHomeGoods('sell')
+    },
+
+methods: {
+      getHomeMultiData() {
+        getHomeMultiData().then(res => {
+          console.log(res);
+          // 保存请求的数据 函数执行完毕会消失，所以这里需要保存请求的数据
+          this.banners = res.data.banner.list
+          this.recommends = res.data.recommend.list
+        })
+      },
+      getHomeGoods(type) {
+        // 获取goods里的页码
+        const page = this.goods[type].page + 1
+        getHomeGoods(type, page).then(res => {
+          console.log(res);
+          this.goods[type].list.push(...res.data.list)
+          this.goods[type].page += 1
+        })
+      }
+    },
+```
+
+这里的主要逻辑就是动态的决定你要传入的类型（type），来获取此类型对应的数据，page用于记录当前获取数据的页码，当上拉刷新请求的时候，这个page就+1，
+
+返回的数据保存在list中，方便使用，这里使用ES6 扩展运算符（...）来讲返回的结果添加到list数组中
+
+## 10.首页商品数据的展示
+
+从Home.vue中取出数据，绑定在goods 上 传递到 GoodList.vue组件
+
+ GoodList.vue通过props接收，然后将数据传递到GoodsListItem.vue组件
+
+GoodsListItem通过props接收，然后显示
+
+Home.vue 代码如下
+
+```js
+//template内新增
+<goods-list :goods="goods.pop.list"></goods-list>
+//script新增
+import GoodsList from '../../components/content/goods/GoodsList.vue'
+components: {
+      GoodsList
+   },
+
+```
+
+GoodList.vue组件代码如下
+
+```js
+<template>
+  <div class="goods-list">
+    <goods-list-item v-for='item in goods' :goods-item="item" class="item" />
+  </div>
+</template>
+
+<script>
+  import GoodsListItem from './GoodsListItem.vue'
+  export default {
+    name: 'GoodsList',
+    components: { GoodsListItem },
+    props: {
+      goods: {
+        type: Array,
+        default() {
+          return []
+        }
+      }
+    }
+  }
+</script>
+
+<style scoped>
+  .goods-list {
+    display: flex;
+    flex-wrap: wrap;
+    padding: 5px;
+    justify-content: space-around;
+  }
+
+  .goods-list .item {
+    width: 48%;
+  }
+</style>
+```
+
+GoodsListItem组件展示数据代码如下
+
+```js
+
+<template>
+  <div class="goods-item">
+    <img :src="goodsItem.show.img" alt="">
+    <div class="goods-info">
+      <p>{{goodsItem.title}}</p>
+      <span class="price">{{goodsItem.price}}</span>
+      <span class="collect">{{goodsItem.cfav}</span>
+    </div>
+  </div>
+</template>
+
+<script>
+
+  export default {
+    name: "GoodsListItem",
+    props: {
+      goodsItem: {
+        type: Object,
+        default() {
+          return {}
+        }
+      }
+    }
+  }
+</script>
+<style scoped>
+
+.goods-item {
+    padding-bottom: 40px;
+    position: relative;
+  }
+
+  .goods-item img {
+    width: 100%;
+    border-radius: 5px;
+  }
+
+  .goods-info {
+    font-size: 12px;
+    position: absolute;
+    bottom: 5px;
+    left: 0;
+    right: 0;
+    overflow: hidden;
+    text-align: center;
+  }
+
+  .goods-info p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    margin-bottom: 3px;
+  }
+
+  .goods-info .price {
+    color: var(--color-high-text);
+    margin-right: 20px;
+  }
+
+  .goods-info .collect {
+    position: relative;
+  }
+
+  .goods-info .collect::before {
+    content: '';
+    position: absolute;
+    left: -15px;
+    top: -1px;
+    width: 14px;
+    height: 14px;
+    background: url("~assets/img/common/collect.svg") 0 0/14px 14px;
+  }
+</style>
+```
+
+## 11.TabControl点击切换商品
+
+思路：点击TabControl，拿到对应的index ，将事件通过`this.$emit('tabClick', index)`发送出去，然后在Home.vue中接受此事件。`<tab-control @tabClick="tabClick">  `,然后根据事件传入的index值来判断属于['pop','new','sell']中的哪个，然后`<goods-list :goods=" goods[currentType].list" />`就动态的选择要传的goods是哪个分类
+
+TabControl.vue中代码实现
+
+```js
+ 在方法中，将tabClick点击事件传出
+ methods: {
+      tabClick(index) {
+        this.currentIndex = index
+          //新增
+        this.$emit('tabClick', index)
+      }
+    },
+```
+
+在Home.vue中
+
+```js
+//绑定传入的tabClick事件，
+<tab-control @tabClick="tabClick" class="tab-control" :titles="['流行','新款','精选']"></tab-control>
+
+//原先的goods后面略长
+<goods-list :goods="goods[currentType].list" />
+//搞个计算属性，见下
+<goods-list :goods="showGoods" />
+    
+// 代码优化，
+computed: {
+      showGoods() {
+        return this.goods[this.currentType].list
+      }
+    },
+data() {
+      return {
+        banners: [],
+        recommends: [],
+        goods: {
+          'pop': { page: 1, list: [] },
+          'new': { page: 1, list: [] },
+          'sell': { page: 1, list: [] },
+        },
+         //新增，用于记录当前点击的类
+        currentType: 'pop'
+      }
+    },
+  methods: {
+      // index 的值为0，1，2根据点击传入的index 来判断你点击的哪个，并将点击的这个类，从goods数据取出，传入到goodsList中。在goodsListItem中展示
+      tabClick(index) {
+        switch (index) {
+          case 0:
+            this.currentType = 'pop'
+            break
+          case 1:
+            this.currentType = 'new'
+            break
+          case 2:
+            this.currentType = 'sell'
+            break
+        }
+      },
+```
+
