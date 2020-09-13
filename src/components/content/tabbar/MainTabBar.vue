@@ -1,4 +1,5 @@
 <template>
+
   <tab-bar>
     <tab-bar-item path="/home">
       <img slot="item-icon" src="~assets/img/tabbar/home.svg" alt="">
@@ -21,6 +22,7 @@
       <span slot="item-text">我的</span>
     </tab-bar-item>
   </tab-bar>
+
 </template>
 
 <script>

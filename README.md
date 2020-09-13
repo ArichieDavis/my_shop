@@ -1847,11 +1847,238 @@ mounted()
   - 在最上面，多复制了一份PlaceHolder（占位的意思） TabControl组件对象，利用他来实现停留效果
   - 当用户滚动到一定位置时，PlaceHolder TabControl显示出来
   - 当用户滚动没有达到一定位置时，PlaceHolder TabControl隐藏起来
-- 
+  
+  
 
 ## 24.让Home保持原来的状态
 
 ### 24.1 让Home不要随意销毁掉
 
-keep-alive
+- keep-alive
+
+
+## 24.2 让Home.vue保存原来的位置
+
+这个没遇到视频中的问题
+
+- 离开时，保存一个位置信息 
+
+- 进来时，将位置设置原来保存的位置saveY信息即可
+
+  - 注意：最好 回来时，进行一次refresh
+
+  
+
+# 详情页实现思路
+
+## 1.点击商品进入详情页
+
+当点击某个商品进入商品的详情页，根据商品的id请求商品的详情数据，并且，将对应数据做一个展示
+
+监听goodsListItem组件的点击，
+
+并不是获取goodsItem的详细信息，只需拿到商品的iid即可，根据iid去请求更加详细的商品信息
+
+http://152.136.185.210:8000/api/z8/detail?iid=1jw0sr2
+
+配置路由映射关系，并且跳转对应的路由，将iid传过去即可
+
+## 2.详情页导航栏的实现
+
+封装一个DetailNavBar.vue组件
+
+代码如下：
+
+```js
+<template>
+  <nav-bar>
+    <img class="back" slot="left" src="~assets/img/common/back.svg" alt="">
+    <div slot="center" class="title">
+      <div v-for="(item,index) in titles" class="title-item" @click='titleClick(index)'
+        :class="{active:currentIndex === index}">
+        {{item}}
+      </div>
+    </div>
+  </nav-bar>
+</template>
+
+<script>
+  import NavBar from 'components/common/navbar/NavBar.vue'
+  export default {
+    name: 'DetailNavBar',
+    components: {
+      NavBar,
+    },
+    data() {
+      return {
+        titles: ['商品', '参数', '评论', '推荐'],
+        currentIndex: {
+          type: Number,
+          default: 0
+        }
+      }
+    },
+    methods: {
+      titleClick(index) {
+        this.currentIndex = index
+      }
+    },
+  }
+</script>
+
+<style scoped>
+  .back {
+    margin-top: 12px;
+  }
+
+  .title {
+    display: flex;
+    padding: 0 20px;
+  }
+
+  .title-item {
+    flex: 1;
+    font-size: 14px;
+  }
+
+  .active {
+    color: var(--color-high-text)
+  }
+</style>
+```
+
+## 3.请求详情的数据
+
+封装detail.js
+
+```js
+import { request } from './request'
+
+
+export function getDetail(iid) {
+  return request({
+    url: "/detail",
+    params: {
+      iid
+    }
+  })
+}
+```
+
+Detail.vue的代码
+
+```js
+
+<template>
+  <div class="detail">
+    <!-- 我是detail:{{$route.params.iid}} -->
+    <detail-nav-bar></detail-nav-bar>
+    详情页:{{$route.query.iid}}
+  </div>
+</template>
+
+<script>
+  import DetailNavBar from './childComps/DetailNavBar.vue'
+  import { getDetail } from 'network/detail.js'
+  export default {
+    name: 'detail',
+    components: {
+      DetailNavBar,
+    },
+    data() {
+      return {
+        iid: null
+      }
+    },
+    created() {
+      //1.获取iid
+      this.iid = this.$route.query.iid
+      // console.log(typeof this.iid);
+
+      //2.请求详情数据
+      getDetail(this.iid).then(res => {
+        console.log(res);
+      })
+    },
+    methods: {
+
+    },
+  }
+</script>
+
+<style scoped>
+
+</style>
+```
+
+## 4.顶部轮播图的展示
+
+这里有个bug，因为主页有个keep-alive这个东西，所以我们每次点击拿到的iid 都是同一个iid，要解决这个问题，在App.vue，加上exclude="Detail"，将这个组件排除，keep-alive就不会记住detail组件的状态了
+
+```
+ <keep-alive exclude="Detail">
+      <router-view></router-view>
+    </keep-alive>
+```
+
+DetailSwiper.vue
+
+```js
+<template>
+  <swiper>
+    <swiper-item v-for="(item, index) in topImages" :key="index" class="swiper-item">
+      <img :src="item" alt="">
+    </swiper-item>
+  </swiper>
+</template>
+
+<script>
+  import { Swiper, SwiperItem } from 'components/common/swiper'
+
+  export default {
+    name: "DetailSwiper",
+    components: {
+      Swiper,
+      SwiperItem
+    },
+    props: {
+      topImages: {
+        type: Array,
+        default: []
+      }
+    }
+  }
+</script>
+
+<style scoped>
+  .swiper-item {
+    height: 300px;
+  }
+</style>
+```
+
+Detail.vue
+
+```js
+<detail-swiper :top-images="topImages" />
+
+
+ data() {
+      return {
+        iid: null,
+        topImages: []
+      }
+    },
+ created() {
+    getDetail(this.iid).then(res => {
+        // console.log(res);
+        // 1.获取数据
+        const data = res.result
+        console.log(data);
+
+        // 2.取出轮播图的数据
+        this.topImages = data.itemInfo.topImages
+      })
+      }
+```
 

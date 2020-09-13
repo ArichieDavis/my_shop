@@ -32,6 +32,7 @@ const routes = [
   },
   {
     path: "/detail",
+    // name: 'detail',
     component: Detail,
   },
 ];

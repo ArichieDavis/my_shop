@@ -59,7 +59,8 @@
         currentType: 'pop',
         isShowBackTop: false,
         tabOffsetTop: 0,
-        isTabFixed: false
+        isTabFixed: false,
+        saveY: 0
       }
     },
     computed: {
@@ -67,6 +68,16 @@
         return this.goods[this.currentType].list
       },
 
+    },
+    destroyed() {
+      console.log("销毁");
+    },
+    activated() {
+      this.$refs.scroll.scrollTo(0, this.saveY, 0)
+      this.$refs.scroll.refresh()
+    },
+    deactivated() {
+      this.saveY = this.$refs.scroll.getScrollY()
     },
     created() {
       // 1.请求多个数据，在页面创建完成后发送网络请求
@@ -162,7 +173,7 @@
       },
       getHomeGoods(type) {
         // 获取goods里的页码
-        const page = this.goods[type].page + 1
+        const page = this.goods[type].page
         getHomeGoods(type, page).then(res => {
           // console.log(res);
           this.goods[type].list.push(...res.data.list)
@@ -207,7 +218,7 @@
   }
 
   .content {
-    overflow: hidden;
+    /* overflow: hidden; */
     position: absolute;
     top: 44px;
     bottom: 49px;
