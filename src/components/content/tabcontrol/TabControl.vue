@@ -27,6 +27,7 @@
     },
     methods: {
       tabClick(index) {
+
         this.currentIndex = index
         this.$emit('tabClick', index)
       }
@@ -37,7 +38,7 @@
   .tab-control {
     display: flex;
     text-align: center;
-    height: 40px;
+    font-size: 15px;
     line-height: 40px;
     background-color: #fff;
   }

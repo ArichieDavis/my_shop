@@ -1790,3 +1790,68 @@ refresh() {
   - 防抖函数起作用的过程
     - 如果我们直接执行refresh,那么refresh函数会执行30次
     - 可以将refresh函数传入到debounce中，生成一个新的函数
+    - 之后在调用非常频繁的时候，就使用新生成的函数
+    - 而新生成的函数，并不会非常频繁的调用，如果下一次执行来的非常快，那么会将上一次取消掉
+
+```js
+debounce(func, delay) {
+        let timer = null
+        return function (...args) {
+          if (timer) clearTimeout(timer)
+          timer = setTimeout(() => {
+            if (this) func.apply(this, args)
+          }, delay)
+        }
+      },
+```
+
+## 22.上拉加载更多功能
+
+见15，上拉加载更多
+
+这里如果出现上拉刷新，卡顿或者卡住的情况，在loadMore函数里调用*this*.$refs.scroll.refresh(),刷新，重新计算可滚动的高度，即可解决，
+
+## 23.TabControl吸顶效果
+
+### 23.1 获取到tabControl 的offsetTop
+
+如何拿到offsetTop？
+
+```js
+
+mounted() 
+2. 获取tabControl的offsetTop
+
+  又有的组件都有一个属性$el:用于获取组件中的元素，这里图片可能没加载完，所以获取的值是不对的
+
+   console.log(*this*.$refs.tabControl.$el.offsetTop);
+}
+```
+
+- 必须知道滚动到多少时，开始有吸顶效果，这个时候就需要获取tabControl 的offsetTop
+- 但是，如果直接在mounted中获取tabControl 的offsetTop，那么值是不正确的
+- 如何获取正确的值？
+  - 监听HomeSwiper 中的img的加载完成
+  - 加载完成后，发出事件，在 Home.vue中，获取正确的值
+  - 补充：
+    - 为了不让HomeSwiper 多次发出事件，
+    - 可以使用isLoad的变量进行状态记录，
+  - 注意：这里不进行多次调用和debounce的区别
+
+### 23.2 监听滚动，动态的改变tabControl的样式
+
+- 问题：动态的改变tabControl的样式时，会出现两个问题，
+  - 问题一：下面的商品的内容，会突然上移
+  - 问题二：tabControl虽然设置了fixed，但是也随着better-scroll一起滚出去了
+- 其他方案来解决停留问题
+  - 在最上面，多复制了一份PlaceHolder（占位的意思） TabControl组件对象，利用他来实现停留效果
+  - 当用户滚动到一定位置时，PlaceHolder TabControl显示出来
+  - 当用户滚动没有达到一定位置时，PlaceHolder TabControl隐藏起来
+- 
+
+## 24.让Home保持原来的状态
+
+### 24.1 让Home不要随意销毁掉
+
+keep-alive
+
