@@ -2013,7 +2013,9 @@ Detail.vue的代码
 
 ## 4.顶部轮播图的展示
 
-这里有个bug，因为主页有个keep-alive这个东西，所以我们每次点击拿到的iid 都是同一个iid，要解决这个问题，在App.vue，加上exclude="Detail"，将这个组件排除，keep-alive就不会记住detail组件的状态了
+这里有个bug，因为主页有个keep-alive这个东西，所以我们每次点击拿到的iid 都是同一个iid，要解决这个问题，在App.vue，加上exclude="Detail"，将这个组件排除，keep-alive就不会记住detail组件的状态了，
+
+**轮播图组件不轮播，或者之加载一张图，其他加载不出来的问题，暂时先搁着**
 
 ```
  <keep-alive exclude="Detail">
@@ -2080,5 +2082,671 @@ Detail.vue
         this.topImages = data.itemInfo.topImages
       })
       }
+```
+
+## 5.商品信息的基本展示
+
+由于商品数据结构复杂，这里我们在detail.js封装一个类，用于保存我们需要的数据
+
+代码如下：
+
+```js
+export class Goods {
+  constructor(itemInfo, columns, services) {
+    this.title = itemInfo.title
+    this.desc = itemInfo.desc
+    this.newPrice = itemInfo.price
+    this.oldPrice = itemInfo.oldPrice
+    this.discount = itemInfo.discountDesc
+    this.realPrice = itemInfo.lowNowPrice
+    this.columns = columns
+    this.services = services
+
+  }
+}
+```
+
+然后在Detail.vue中，请求数据的函数里，将返回的数据进行存储
+
+```js
+// 第三步：动态的将数据传递到DetailBaseInfo.vue组件中
+<detail-base-info :goods="goodsInfo"></detail-base-info> 
+
+data() {
+      return {
+    // 第一步:这个对象就是用于存储数据的
+        goodsInfo: {},
+      }
+    },
+    
+ created() {
+  // 第二步：实例化Goods这个类，然后将data里的数据作为参数传递进去
+     getDetail(this.iid).then(res => {
+        this.goodsInfo = new Goods(data.itemInfo, data.columns, data.shopInfo.services)
+	})      
+}
+```
+
+最后，DetailBaseInfo.vue中用props接收数据，并展示
+
+```js
+ props: {
+      goods: {
+        type: Object
+      }
+    }
+```
+
+剩下样式结构相关的东西，参照源码即可
+
+**注意**： v-for是可以遍历数字的，v-for="item in 5",返回的是：1，2，3，4，5不是老师所说的0，1，2，3，4
+
+## 6.店铺信息的展示
+
+DetailShopInfo.vue
+
+源码是用detail.js封装一个类，保存需要的数据，课堂上并没有，所以复制源码的时候，注意取出数据的名称
+
+Home.vue
+
+```js
+<detail-shop-info :shop="shopInfo"></detail-shop-info>
+
+data() {
+      return {
+        shopInfo: {},
+      }
+    },
+
+// 4.取出店铺的信息
+        this.shopInfo = data.shopInfo
+```
+
+
+
+```js
+// 这个过滤器是判断销量在10000以上还是以下显示的形式
+sellCountFilter: function (value) {
+ if (value < 10000) return value
+ return (value / 10000).toFixed(1) + '万'
+}
+```
+
+代码参照源码，思路和上面都是一样的
+
+## 7.商品图片信息展示
+
+DetailImageInfo.vue 源码叫 DetailGoodsInfo.vue
+
+## 8.商品参数信息展示
+
+难点：
+
+1.代码如何组织
+
+2.业务逻辑（不要立即动手）
+
+3.自己留的bug（莫名bug）
+
+
+
+
+
+DetailParamInfo.vue,复制粘贴的时候回抱一个错：length undefined，原因是有些商品的参数信息是不完整的，就是有空白的。所以 ` v-if="Object.keys(paramInfo).length !== 0"` 这个条件就出错了，
+
+解决方案：
+
+1.detail.js中，自定义个类，用它来接受筛选数据，这样我们的判断就不会出错了
+
+```js
+export class GoodsParam {
+  constructor(info, rule) {
+    // 注: images可能没有值(某些商品有值, 某些没有值)
+    this.image = info.images ? info.images[0] : '';
+    this.infos = info.set;
+    this.sizes = rule.tables;
+  }
+}
+
+```
+
+2.detail.vue中,保存new 实例化的数据
+
+```js
+this.paramInfo = new GoodsParam(data.itemParams.info, data.itemParams.rule)
+```
+
+## 9.商品评论信息展示
+
+问题：如何将时间戳 转成时间格式化字符串（常用）
+
+时间戳：1535694719（秒）
+
+1.将时间戳转成Date对象
+
+const data = new Date（1535694719*1000）【毫秒】
+
+2.将data进行格式化，转成对象的字符串
+
+date.getYear() +date.getMonth() +1 
+
+y;year年
+
+M：month 月
+
+d：day 日
+
+ h：hours 小时（h（12小时）/ H（24小时））
+
+m ：minutes 分钟
+
+s：seconds 秒钟
+
+
+
+formatDate（data,"yyyy-MM-dd hh:mm:ss"）
+
+## 10.商品推荐数据的展示
+
+在另外一个接口  /recommend
+
+
+
+复用goodsList组件
+
+注意服务端范返回的数据，名字不一样，搞个计算属性判断即可
+
+```js
+showImage() {
+
+ return this.goodsItem.image || this.goodsItem.show.img
+
+}
+```
+
+## 11.首页和详情页监听全局事件总线和mixin的使用
+
+GoodsListItem.vue有个imgLoad()方法，这个方法是利用全局事件总线监听的，详情页也要监听图片加载完成，进行BS-refresh，因为在GoodsListItem.vue的组件发出事件在Home.vue监听了，所以我们要区分出来，是detail.vue接收事件还是在Home.vue接收事件，
+
+法一：判断这个哪个组件的图片加载完了，需要刷新页面
+
+所以这里先提供一个思路：根据路由判断在哪个组件中的商品图片已经加载完了，然后在图片加载完成后刷新页面，让better-scroll重新计算高度，然后发出不同的事件，这样就不会串了
+
+```js
+imgLoad(){
+// 判断这个路由是否在/home 在“/home ”的时候就发出这个事件
+	if(this.$route.path.indexOf('/home')){
+		this.$bus.$emit("homeItemImgLoad")
+	}else if(this.$route.path.indexOf('/detail')){
+		this.$bus.$emit("detailItemImgLoad")
+	}
+}
+```
+
+法二：另一个思路：只发出一个事件，然后判断页面离开的 时候，取消全局事件的监听
+
+```js
+imageLoad() {
+    // 这里发出一个事件
+   this.$bus.$emit('itemImageLoad'） 
+ },
+```
+
+在Home.vue文件中，取消全局事件的监听，不能只传事件名，还要写监听的那个函数
+
+```js
+ data() {
+      return {
+        itemListener:null
+      }
+}
+mounted() {
+    // 1. 图片加载完成额事件监听
+    const refresh = debounce(this.$refs.scroll.refresh, 100)
+	// 将原先的箭头函数抽取出来，放在变量中，这个变量在data里声明一下，
+    this.itemListener =() => {
+       refresh()
+    }
+    this.$bus.$on('itemImageLoad', this.itemListener)
+  },
+deactivated() {
+      
+      // 取消全局事件的监听，将上面的变量拿到这里，就取消了这个事件监听
+      this.$bus.$off("itemImageLoad", this.itemListener)
+    this.$bus.$off('事件名',"原事件内的函数")
+    },
+```
+
+在Detail.vue中，监听事件总线的事件，然后进行刷新
+
+```js
+
+ data() {
+      return {
+        itemListener:null
+      }
+}
+mounted() {
+    // 1. 图片加载完成额事件监听
+    const refresh = debounce(this.$refs.scroll.refresh, 100)
+	// 将原先的箭头函数抽取出来，放在变量中，这个变量在data里声明一下，
+    this.itemListener =() => {
+       refresh()
+    }
+    this.$bus.$on('itemImageLoad', this.itemListener)
+  },
+deactivated() {
+      
+      // 取消全局事件的监听，将上面的变量拿到这里，就取消了这个事件监听
+    this.$bus.$off("itemImageLoad", this.itemListener)
+    this.$bus.$off('事件名',"原事件内的函数")
+    },
+```
+
+混入解决两个组件重复代码的问题,下面是个例子，
+
+新建 common/mixin.js，然后在Home.vue或其他组件引用,
+
+```js
+import { debounce } from './untils'
+
+export const itemListenerMixin = {
+  data() {
+    return {
+      itemListener: null
+    }
+  },
+  mounted() {
+    // 1. 图片加载完成额事件监听
+    const refresh = debounce(this.$refs.scroll.refresh, 100)
+    this.$bus.$on('itemImageLoad', () => {
+      // console.log('-----');
+      refresh()
+      // this.$refs.scroll.refresh()
+      this.$bus.$on('itemImgLoad', this.itemListenerMixin)
+      // console.log("我是混入的内容");
+
+    })
+  },
+}
+```
+
+Home.vue 使用和在Detail.vue 使用
+
+```js
+// 导入
+import { backTopMixin } from "common/mixin";
+// 使用
+mixins: [backTopMixin],
+```
+
+## 12.详情页标题和内容联动效果
+
+1点击标题跳转到对应位置
+
+2底部工具栏，点击加入购物车，vuex统一管理
+
+3 回到顶部（采用混入mixins）
+
+### 12.1.点击标题滚动到对应内容
+
+作为属性用的时候， 不建议用驼峰命名法，传递事件的时候，可以用驼峰命名法，但官网**推荐**短横线命名法
+
+属性：子组件有个“tabItem”，父组件可以写tab-item，也可以写“tabItem”
+
+方法：子组件有个tabClick，父组件不可以写 “tab-click” ，只能写“tabClick”
+
+- 在detail 中监听标题的点击，获取index
+- 滚动到对应的主题：
+  - 获取所有主题的offsetTop
+  - 问题，在哪里才能获取正确的offsetTop
+    - created 肯定不行，压根就不能获取元素
+    - mounted也不行，数据还没获取到
+    - 获取到数据的回调中也不行，DOM还没有渲染完
+    - $nextTick也不行，因为图片的高度没有计算在内
+    - 在图片加载完成后，获取的高度才是正确
+
+### 12.2滚动内容显示对应标题
+
+[0，7938，9120，9452]，
+
+判断两个值之间，然后对应的currentIndex   =  i  ，这里最后的i + 1 是超出的。
+
+普通做法：
+
+```js
+(this.currentIndex !== i && (i < length - 1 && positionY >= this.themeTops[i] && positionY < this.themeTops[i + 1]) || (this.currentIndex !== i && i === length - 1 && positionY >= this.themeTops[i]))
+
+条件一：防止赋值的过程过于频繁
+条件二：(i < length - 1 && positionY >= this.themeTops[i] && positionY < this.themeTops[i + 1]) )
+
+
+判断区间：0和某个数字之间(i < length -1)
+判断大于等于: i=== length -1 
+
+```
+
+完整判断代码
+
+```
+if (this.currentIndex !== i && (i < length - 1 && positionY >= this.themeTops[i] && positionY < this.themeTops[i + 1]) || (this.currentIndex !== i && i === length - 1 && positionY >= this.themeTops[i])) {
+            this.currentIndex = i
+            console.log(this.currentIndex);
+            this.$refs.nav.currentIndex = this.currentIndex
+          }
+```
+
+hack做法：用空间换时间。在末尾添加一个最大值，就不用考虑currentIndex 就不会超出了
+
+[0，7938，9120，9452，Number.Max_VALUE]
+
+```js
+if(this.currentIndex !== i && (positonsY >= this,themeTops[i] && (positonsY <this.themeTops[i+1] )){
+   this.currentIndex = i
+    this.$refs.nav.currentIndex = this.currentIndex
+}
+```
+
+## 13.底部工具栏的封装
+
+DetailBottomBar.vue
+
+```js
+<template>
+  <div class="bottom-bar">
+    <div class="bar-item bar-left">
+      <div>
+        <i class="icon service"></i>
+        <span class="text">客服</span>
+      </div>
+      <div>
+        <i class="icon shop"></i>
+        <span class="text">店铺</span>
+      </div>
+      <div>
+        <i class="icon select"></i>
+        <span class="text">收藏</span>
+      </div>
+    </div>
+    <div class="bar-item bar-right">
+      <div class="cart" @click="addToCart">加入购物车</div>
+      <div class="buy">购买</div>
+    </div>
+  </div>
+</template>
+
+<script>
+export default {
+  name: "DetailBottomBar",
+
+  methods: {
+    addToCart(event) {
+      // this.$refs.ball.run(event.target)
+      this.$emit("addToCart");
+    },
+  },
+};
+</script>
+
+<style scoped>
+.bottom-bar {
+  height: 58px;
+  position: fixed;
+  background-color: #fff;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 10;
+
+  display: flex;
+  text-align: center;
+}
+
+.bar-item {
+  flex: 1;
+  display: flex;
+}
+
+.bar-item > div {
+  flex: 1;
+}
+
+.bar-left .text {
+  font-size: 13px;
+}
+
+.bar-left .icon {
+  display: block;
+  width: 22px;
+  height: 22px;
+  margin: 10px auto 3px;
+  background: url("~assets/img/detail/detail_bottom.png") 0 0/100%;
+}
+
+.bar-left .service {
+  background-position: 0 -54px;
+}
+
+.bar-left .shop {
+  background-position: 0 -98px;
+}
+
+.bar-right {
+  font-size: 15px;
+  color: #fff;
+  line-height: 58px;
+}
+
+.bar-right .cart {
+  background-color: #ffe817;
+  color: #333;
+}
+
+.bar-right .buy {
+  background-color: #f69;
+}
+
+
+</style>
+
+```
+
+## 14.BackTop的混入封装
+
+Home.vue和Detail.vue 的BackTop的mixins
+
+mixins.js,将需要混入的公共部分抽取出来
+
+```js
+import BackTop from "components/content/backTop/BackTop.vue";
+export const BackTopMixin = {
+  components: { BackTop },
+  data() {
+    return {
+      isShowBackTop: false,
+    };
+  },
+  methods: {
+    backClick() {
+      this.$refs.scroll.scrollTo(0, 0, 300);
+    },
+  },
+};
+
+```
+
+然后在Home.vue和Detail.vue中删除相关代码，添加以下代码
+
+```js
+import { itemListenerMixin, BackTopMixin } from "../../common/mixin.js";
+
+ mixins: [itemListenerMixin, BackTopMixin],
+```
+
+注意：样式的层叠，导致backTop在Detail中显得不出来。给z-index属性即可
+
+## 15.点击添加购物车
+
+在Detail.vue中点击，把数据在Cart中展示，用vuex做数据的管理，
+
+点击DetailBottomBar的加入购物车按钮，绑定addToCart事件，然后发出，在Detail页面监听这个点击，并获取到购物车展示需要的数据
+
+DetailBottomBar.vue
+
+```js
+<div class="cart" @click="addToCart">加入购物车</div>
+
+ methods: {
+    addToCart() {
+      // this.$refs.ball.run(event.target)
+      this.$emit("addCart");
+    },
+  },
+
+```
+
+Detail.vue 页面接受传递过来的addCart事件，并取名为addToCart，在对应的methods里实现保存购物车需要的数据
+
+```js
+ 
+<detail-bottom-bar @addCart='addToCart'></detail-bottom-bar>
+
+methods:{
+    addToCart() {
+        // 1.获取购物车需要展示的信息
+        // console.log('-----------');
+        const obj = {};
+        obj.iid = this.iid;
+        obj.imgURL = this.topImages[0];
+        obj.title = this.goods.title;
+        obj.desc = this.goods.desc;
+        obj.price = this.goods.realPrice;
+        console.log(obj);
+        this.$store.dispatch('addCart', obj)
+      },
+}
+```
+
+这些数据需要传递到Cart页面，所以用vuex 做数据管理
+
+`npm i vuex --save`安装vuex
+
+在src下新建store文件夹，作为vuex的默认文件夹，再新建index.js文件，代码如下
+
+```j's
+//导入包
+import Vue from "vue";
+import Vuex from "vuex";
+
+// 安装插件
+Vue.use(Vuex);
+
+// 使用vuex插件
+const store = new Vuex.Store({
+  state:{},
+  mutations:{}
+  actions:{}
+});
+export default store;
+
+```
+
+main.js入口文件引入vuex
+
+```js
+import store from "./store/index";
+
+new Vue({
+  router,
+  store,
+  render: (h) => h(App),
+}).$mount("#app");
+
+```
+
+使用vuex来管理这个购物车数据
+
+最终代码：index.js
+
+```js
+import Vue from "vue";
+import Vuex from "vuex";
+
+import mutations from "./mutations";
+import actions from "./actions";
+Vue.use(Vuex);
+
+const state = {
+  cartList: [],
+};
+const store = new Vuex.Store({
+  state,
+  mutations,
+  actions,
+});
+export default store;
+
+```
+
+action.js
+
+```js
+import { ADD_COUNTER, ADD_TO_CART } from "./mutations-type";
+
+export default {
+  addCart(context, payload) {
+    // 法一
+    //1 判断payload新添加的商品是否和之前重复
+    // let oldProduct = null;
+    // for (let item of state.cartList) {
+    //   if (item.iid === payload.iid) {
+    //     oldProduct = item;
+    //   }
+    // }
+    // 2.判断oldProduct
+    // if (oldProduct) {
+    //   oldProduct.count += 1;
+    // } else {
+    //   payload.count = 1;
+    //   state.cartList.push(payload);
+    // }
+    // 法二:查找之前数组中是否有该商品
+    let oldProduct = context.state.cartList.find(
+      (item) => item.iid === payload.iid
+    );
+    if (oldProduct) {
+      // oldProduct.count += 1;
+      context.commit(ADD_COUNTER, oldProduct);
+    } else {
+      payload.count = 1;
+      // context.state.cartList.push(payload);
+      context.commit(ADD_TO_CART, payload);
+    }
+  },
+};
+
+```
+
+mutations.js
+
+```js
+import { ADD_COUNTER, ADD_TO_CART } from "./mutations-type";
+export default {
+  [ADD_COUNTER](state, payload) {
+    payload.count++;
+  },
+  [ADD_TO_CART](state, payload) {
+    state.cartList.push(payload);
+  },
+};
+
+```
+
+mutations-type.js
+
+```js
+export const ADD_COUNTER = "add_counter";
+export const ADD_TO_CART = "add_to_cart";
+
 ```
 
