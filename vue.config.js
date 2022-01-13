@@ -1,3 +1,5 @@
+const { BundleAnalyzerPlugin } = require("webpack-bundle-analyzer")
+
 module.exports = {
   configureWebpack: {
     resolve: {
@@ -9,5 +11,6 @@ module.exports = {
         assets: "@/assets",
       },
     },
+    plugins: [new BundleAnalyzerPlugin()],
   },
-};
+}
